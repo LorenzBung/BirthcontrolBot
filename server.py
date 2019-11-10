@@ -39,10 +39,13 @@ def make_reply(msg, sender):
         elif msg == "/stop":
             lock.acquire()
             try:
-                bot.status.pop(sender)
-                bot.time.pop(sender)
-                bot.reminder.pop(sender)
-                return "Okay, I will stop reminding you."
+                try:
+                    bot.status.pop(sender)
+                    bot.time.pop(sender)
+                    bot.reminder.pop(sender)
+                    return "Okay, I will stop reminding you."
+                except KeyError:
+                    return "Okay, I will stop reminding you."
             finally:
                 lock.release()
 
