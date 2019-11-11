@@ -54,7 +54,7 @@ def handle_reminders():
     while True:
         lock.acquire()
         try:
-            for sender in bot.status.keys():
+            for sender in list(bot.status.keys()):
                 try:
                     cycle_day = (dt.datetime.now() - bot.time[sender]).days % 28
                     if cycle_day < 21:
