@@ -23,10 +23,11 @@ def make_reply(msg, sender):
                 try:
                     time = dateutil.parser.parse(msg, dayfirst=True)
                     bot.time[sender] = time
-                    bot.reminder[sender] = dt.datetime.now()
+                    bot.reminder[sender] = time.replace(day=dt.datetime.now().day)
                     bot.status[sender] = "running"
                     return "Set starting date to {}.\n\nOkay, I will remind you at {:02}:{:02} if you have to take a pill.".format(bot.time[sender], bot.time[sender].hour, bot.time[sender].minute)
-                except:
+                except Exception as e:
+                    print(e)
                     return "Please enter in a valid format. Examples: 16.09.2019 23:12 or 16/09/2019 14:27"
             finally:
                 lock.release()
@@ -59,8 +60,9 @@ def handle_reminders():
                     cycle_day = (dt.datetime.now() - bot.time[sender]).days % 28
                     if cycle_day < 21:
                         if bot.reminder[sender] <= dt.datetime.now():
-                            bot.reminder[sender] = bot.reminder[sender] + dt.timedelta(days=1)
-                            bot.send_message("💊 Pill reminder! Current day in cycle: {}".format(cycle_day), sender)
+                            tomorrow = dt.datetime.now() + dt.timedelta(days=1)
+                            bot.reminder[sender].replace(day=tomorrow.day)
+                            bot.send_message("💊 Pill reminder! Current day in cycle: {}".format(cycle_day + 1), sender)
                 except KeyError:
                     pass
         finally:
