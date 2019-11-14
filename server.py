@@ -2,6 +2,7 @@ from bot import telegram_chatbot
 import threading
 import dateutil.parser
 import datetime as dt
+import time
 
 bot = telegram_chatbot()
 lock = threading.Lock()
@@ -25,6 +26,7 @@ def make_reply(msg, sender):
                     bot.time[sender] = time
                     bot.reminder[sender] = time.replace(day=dt.datetime.now().day)
                     bot.status[sender] = "running"
+                    print("Set time for {}. Start: {}, Reminder: {}".format(sender, bot.time[sender], bot.reminder[sender]))
                     return "Set starting date to {}.\n\nOkay, I will remind you at {:02}:{:02} if you have to take a pill.".format(bot.time[sender], bot.time[sender].hour, bot.time[sender].minute)
                 except Exception as e:
                     print(e)
@@ -44,6 +46,7 @@ def make_reply(msg, sender):
                     bot.status.pop(sender)
                     bot.time.pop(sender)
                     bot.reminder.pop(sender)
+                    print("Removed {}.".format(sender))
                     return "Okay, I will stop reminding you."
                 except KeyError:
                     return "Okay, I will stop reminding you."
@@ -61,12 +64,14 @@ def handle_reminders():
                     if cycle_day < 21:
                         if bot.reminder[sender] <= dt.datetime.now():
                             tomorrow = dt.datetime.now() + dt.timedelta(days=1)
-                            bot.reminder[sender].replace(day=tomorrow.day)
+                            bot.reminder[sender] = bot.reminder[sender].replace(day=tomorrow.day)
+                            print("Sent reminder to {}.".format(sender))
                             bot.send_message("💊 Pill reminder! Current day in cycle: {}".format(cycle_day + 1), sender)
                 except KeyError:
                     pass
         finally:
             lock.release()
+        time.sleep(1)
 
 
 def handle_messages():
@@ -84,6 +89,7 @@ def handle_messages():
                 sender = item["message"]["from"]["id"]
                 reply = make_reply(message, sender)
                 bot.send_message(reply, sender)
+        time.sleep(1)
 
 
 if __name__ == "__main__":
