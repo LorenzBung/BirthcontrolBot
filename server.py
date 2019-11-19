@@ -25,6 +25,7 @@ def make_reply(msg, sender):
                     bot.time[sender] = time
                     bot.reminder[sender] = dt.datetime.now()
                     bot.status[sender] = "running"
+                    add_reminder(sender, msg)
                     return "Set starting date to {}.\n\nOkay, I will remind you at {:02}:{:02} if you have to take a pill.".format(bot.time[sender], bot.time[sender].hour, bot.time[sender].minute)
                 except:
                     return "Please enter in a valid format. Examples: 16.09.2019 23:12 or 16/09/2019 14:27"
@@ -43,6 +44,7 @@ def make_reply(msg, sender):
                     bot.status.pop(sender)
                     bot.time.pop(sender)
                     bot.reminder.pop(sender)
+                    remove_reminder(sender)
                     return "Okay, I will stop reminding you."
                 except KeyError:
                     return "Okay, I will stop reminding you."
@@ -84,7 +86,33 @@ def handle_messages():
                 bot.send_message(reply, sender)
 
 
+def load_reminders():
+    try:
+        with open(".BirthcontrolBot_reminders", "r") as file:
+            for line in file:
+                try:
+                    id, time = line.split("\t")
+                    bot.time[id] = dateutil.parser.parse(time, dayfirst=True)
+                    bot.reminder[id] = dt.datetime.now()
+                    bot.status[id] = "running"
+                except:
+                    pass
+    except FileNotFoundError:
+        pass
+
+def add_reminder(id, time):
+    with open(".BirthcontrolBot_reminders", "a") as file:
+        file.write(id + "\t" + time + "\n")
+
+def remove_reminder(id):
+    with open(".BirthcontrolBot_reminders", "w") as file:
+        for line in file:
+            if not line.startswith(id):
+                file.write(line)
+
+
 if __name__ == "__main__":
+    load_reminders()
     message_thread = threading.Thread(target=handle_messages)
     reminder_thread = threading.Thread(target=handle_reminders)
     message_thread.start()
