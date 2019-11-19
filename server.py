@@ -100,23 +100,30 @@ def load_reminders():
             for line in file:
                 try:
                     id, time = line.split("\t")
+                    id = int(id)
                     bot.time[id] = dateutil.parser.parse(time, dayfirst=True)
                     bot.reminder[id] = dt.datetime.now()
                     bot.status[id] = "running"
                 except:
                     pass
+        print(bot.time)
+        print(bot.reminder)
     except FileNotFoundError:
         pass
 
 def add_reminder(id, time):
     with open(".BirthcontrolBot_reminders", "a") as file:
-        file.write(id + "\t" + time + "\n")
+        file.write(str(id) + "\t" + time + "\n")
 
 def remove_reminder(id):
-    with open(".BirthcontrolBot_reminders", "w") as file:
-        for line in file:
-            if not line.startswith(id):
-                file.write(line)
+    file = ""
+    with open(".BirthcontrolBot_reminders", "r") as oldfile:
+        for line in oldfile:
+            file += line
+    with open(".BirthcontrolBot_reminders", "w") as newfile:
+        for line in file.split("\n"):
+            if not line.startswith(str(id)):
+                newfile.write(line)
 
 
 if __name__ == "__main__":
