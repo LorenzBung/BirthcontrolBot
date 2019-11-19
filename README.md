@@ -8,7 +8,7 @@ It can be reached at [@BirthcontrolBot](https://t.me/birthcontrol_bot)
 
 ## Usage
 
-1. Get a Telegram bot token (by messaging @BotFather and creating a bot)
+1. Get a Telegram bot token (by messaging [@BotFather](https://t.me/botfather) and creating a bot)
 2. Clone this repository
 3. Replace the token in `bot.py`
 4. Run `server.py`

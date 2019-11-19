@@ -2,6 +2,7 @@ from bot import telegram_chatbot
 import threading
 import dateutil.parser
 import datetime as dt
+import time
 
 bot = telegram_chatbot()
 lock = threading.Lock()
@@ -23,20 +24,22 @@ def make_reply(msg, sender):
                 try:
                     time = dateutil.parser.parse(msg, dayfirst=True)
                     bot.time[sender] = time
-                    bot.reminder[sender] = dt.datetime.now()
+                    bot.reminder[sender] = time.replace(day=dt.datetime.utcnow().day)
                     bot.status[sender] = "running"
                     add_reminder(sender, msg)
+                    print("Set time for {}. Start: {}, Reminder: {}".format(sender, bot.time[sender], bot.reminder[sender]))
                     return "Set starting date to {}.\n\nOkay, I will remind you at {:02}:{:02} if you have to take a pill.".format(bot.time[sender], bot.time[sender].hour, bot.time[sender].minute)
-                except:
+                except Exception as e:
+                    print(e)
                     return "Please enter in a valid format. Examples: 16.09.2019 23:12 or 16/09/2019 14:27"
             finally:
                 lock.release()
         elif msg == "/start":
             bot.status[sender] = "set_time"
-            return "Hello! I will remind you to take your birth control on a daily basis.\n\nWhen was the first time you took the pill in this cycle? (Examples: 16.09.2019 23:12 or 16/09/2019 14:27)"
+            return "Hello! I will remind you to take your birth control on a daily basis.\n\nWhen was the first time you took the pill in this cycle? Please enter time in UTC. (Examples: 16.09.2019 23:12 or 16/09/2019 14:27)"
         elif msg == "/settime":
             bot.status[sender] = "set_time"
-            return "When was the first time you took the pill in this cycle? (Examples: 16.09.2019 23:12 or 16/09/2019 14:27)"
+            return "When was the first time you took the pill in this cycle? Please enter time in UTC. (Examples: 16.09.2019 23:12 or 16/09/2019 14:27)"
         elif msg == "/stop":
             lock.acquire()
             try:
@@ -45,6 +48,7 @@ def make_reply(msg, sender):
                     bot.time.pop(sender)
                     bot.reminder.pop(sender)
                     remove_reminder(sender)
+                    print("Removed {}.".format(sender))
                     return "Okay, I will stop reminding you."
                 except KeyError:
                     return "Okay, I will stop reminding you."
@@ -56,17 +60,20 @@ def handle_reminders():
     while True:
         lock.acquire()
         try:
-            for sender in bot.status.keys():
+            for sender in list(bot.status.keys()):
                 try:
                     cycle_day = (dt.datetime.now() - bot.time[sender]).days % 28
                     if cycle_day < 21:
-                        if bot.reminder[sender] <= dt.datetime.now():
-                            bot.reminder[sender] = bot.reminder[sender] + dt.timedelta(days=1)
-                            bot.send_message("💊 Pill reminder! Current day in cycle: {}".format(cycle_day), sender)
+                        if bot.reminder[sender] <= dt.datetime.utcnow():
+                            tomorrow = dt.datetime.utcnow() + dt.timedelta(days=1)
+                            bot.reminder[sender] = bot.reminder[sender].replace(day=tomorrow.day)
+                            print("Sent reminder to {}.".format(sender))
+                            bot.send_message("💊 Pill reminder! Current day in cycle: {}".format(cycle_day + 1), sender)
                 except KeyError:
                     pass
         finally:
             lock.release()
+        time.sleep(1)
 
 
 def handle_messages():
@@ -84,6 +91,7 @@ def handle_messages():
                 sender = item["message"]["from"]["id"]
                 reply = make_reply(message, sender)
                 bot.send_message(reply, sender)
+        time.sleep(1)
 
 
 def load_reminders():
