@@ -17,7 +17,7 @@ class telegram_chatbot():
         if offset:
             url = url + "&offset={}".format(offset + 1)
         r = requests.get(url)
-        return json.loads(r.content)
+        return r.json()
 
     def send_message(self, msg, chat_id):
         url = self.base + "sendMessage?chat_id={}&text={}".format(chat_id, msg)
